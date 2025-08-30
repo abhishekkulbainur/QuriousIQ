@@ -1,0 +1,18 @@
+{
+  "Science": {
+    "easy": [
+      {
+        "question": "What planet is known as the Red Planet?",
+        "options": ["A) Earth", "B) Mars", "C) Venus", "D) Jupiter"],
+        "answer": "B"
+      }
+    ],
+    "medium": [],
+    "hard": []
+  },
+  "Math": {
+    "easy": [],
+    "medium": [],
+    "hard": []
+  }
+}

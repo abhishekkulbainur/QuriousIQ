@@ -1,4 +1,8 @@
 {
   "theme": "dark",
-  "sound": true
+  "time_per_question": 15,
+  "shuffle_questions": true,
+  "shuffle_options": true,
+  "show_leaderboard": true,
+  "max_highscores": 10
 }

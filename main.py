@@ -1,5 +1,4 @@
-from quiz import QuriousIQ
+from quiz import start_quiz
 
 if __name__ == "__main__":
-    app = QuriousIQ()
-    app.run()
+    start_quiz()

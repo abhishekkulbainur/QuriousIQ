@@ -1,3 +1,23 @@
 [
-  {"name": "Abhishek", "score": 8, "category": "Science", "difficulty": "easy"}
+    {
+        "name": "Abhishek",
+        "score": 100,
+        "category": "General",
+        "difficulty": "easy"
+    },
+    {
+        "name": "Rohan",
+        "score": 80,
+        "category": "History",
+        "difficulty": "hard"
+    },
+    {
+        "name": "Priya",
+        "score": 35,
+        "category": "Science",
+        "difficulty": "medium"
+    },
+    {
+        "score": 3
+    }
 ]

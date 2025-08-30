@@ -1,140 +1,144 @@
-import json, os, random, tkinter as tk
-from tkinter import messagebox
-from UI import styles, widgets
+import json
+import random
+import tkinter as tk
+from UI.widgets import primary_button, secondary_button, title_label
+from UI.styles import apply_theme, LIGHT_THEME, DARK_THEME
+from UI.themes import Theme
+from UI.sounds import SoundManager
+import json
 
-DATA_FOLDER = "data"
-QUESTIONS_FILE = os.path.join(DATA_FOLDER, "questions.json")
-HIGHSCORES_FILE = os.path.join(DATA_FOLDER, "highscores.json")
+def load_config():
+    with open("data/config.json", "r") as f:
+        return json.load(f)
 
-# Load questions
-with open(QUESTIONS_FILE, "r") as f:
-    QUESTIONS = json.load(f)
 
-# Load highscores
-if os.path.exists(HIGHSCORES_FILE):
-    with open(HIGHSCORES_FILE, "r") as f:
-        HIGHSCORES = json.load(f)
-else:
-    HIGHSCORES = []
+# Load data functions
+def load_questions():
+    with open("data/questions.json", "r") as f:
+        return json.load(f)
+
+def load_highscores():
+    with open("data/highscores.json", "r") as f:
+        return json.load(f)
+
+def save_highscores(scores):
+    with open("data/highscores.json", "w") as f:
+        json.dump(scores, f, indent=4)
 
 class QuizApp:
     def __init__(self, root):
         self.root = root
-        self.root.title("🎮 Quiz Game")
-        self.root.geometry("700x500")
-        self.root.configure(bg=styles.BG_COLOR)
+        self.root.title("QuriousIQ Quiz Game")
 
-        self.player_name = ""
-        self.difficulty = "easy"
+        # Load config + theme
+        self.config = load_config()
+        self.theme = Theme(self.config.get("theme", "light"))
+        apply_theme(self.root, LIGHT_THEME if self.config.get("theme") == "light" else DARK_THEME)
+
+        # Sound manager
+        self.sound_manager = SoundManager()
+
+        # Load and shuffle questions
+        self.questions = load_questions()
+        if self.config.get("shuffle_questions", True):
+            random.shuffle(self.questions)
+        self.current_q_index = 0
         self.score = 0
-        self.current_q = 0
-        self.quiz = []
-        self.time_left = 15
+        self.timer = self.config.get("time_per_question", 15)
         self.timer_id = None
 
-        self.build_start_screen()
-
-    # ---------- Start Screen ---------- #
-    def build_start_screen(self):
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        widgets.styled_label(self.root, "Welcome to the Quiz Game 🎉", styles.FONT_TITLE).pack(pady=20)
-
-        widgets.styled_label(self.root, "Enter your name:").pack()
-        self.name_entry = tk.Entry(self.root, font=styles.FONT_SUBTITLE, width=25)
-        self.name_entry.pack(pady=10)
-
-        widgets.styled_label(self.root, "Choose Difficulty:").pack()
-        self.difficulty_var = tk.StringVar(value="easy")
-        tk.OptionMenu(self.root, self.difficulty_var, "easy", "medium", "hard").pack(pady=10)
-
-        widgets.styled_button(self.root, "Start Quiz", self.start_quiz, styles.PRIMARY_COLOR).pack(pady=20)
-
-    # ---------- Start Quiz ---------- #
-    def start_quiz(self):
-        self.player_name = self.name_entry.get()
-        self.difficulty = self.difficulty_var.get()
-
-        if not self.player_name.strip():
-            messagebox.showerror("Error", "Please enter your name!")
-            return
-
-        self.quiz = QUESTIONS[self.difficulty]
-        random.shuffle(self.quiz)
-        self.score = 0
-        self.current_q = 0
+        # UI setup
+        self.setup_ui()
         self.show_question()
 
-    # ---------- Show Question ---------- #
-    def show_question(self):
-        for widget in self.root.winfo_children():
-            widget.destroy()
+    def setup_ui(self):
+        self.question_label = title_label(self.root, "Question will appear here", self.theme)
+        self.question_label.pack(pady=20)
 
-        if self.current_q >= len(self.quiz):
-            self.end_quiz()
-            return
+        self.option_buttons = []
+        for i in range(4):
+            btn = primary_button(self.root, f"Option {i+1}", self.theme, lambda idx=i: self.check_answer(idx))
+            btn.pack(pady=5, fill="x", padx=100)
+            self.option_buttons.append(btn)
 
-        q = self.quiz[self.current_q]
-
-        widgets.styled_label(self.root, f"Question {self.current_q+1}/{len(self.quiz)}", styles.FONT_SUBTITLE).pack(pady=10)
-        widgets.styled_label(self.root, q["question"], styles.FONT_TITLE).pack(pady=20)
-
-        for option in q["options"]:
-            widgets.styled_button(self.root, option, lambda opt=option[0]: self.check_answer(opt), styles.SECONDARY_COLOR).pack(pady=5)
-
-        self.timer_label = widgets.styled_label(self.root, f"⏳ Time Left: {self.time_left}s", styles.FONT_SUBTITLE, "red")
+        self.timer_label = title_label(self.root, f"Time left: {self.timer}s", self.theme)
         self.timer_label.pack(pady=10)
 
-        widgets.styled_label(self.root, f"Score: {self.score}", styles.FONT_SUBTITLE).pack(side="bottom", pady=10)
+        self.next_button = secondary_button(self.root, "Next Question", self.theme, self.next_question)
+        self.next_button.pack(pady=20)
 
-        self.start_timer()
+    def show_question(self):
+        if self.current_q_index < len(self.questions):
+            self.timer = self.config.get("time_per_question", 15)
+            self.update_timer()
 
-    # ---------- Timer ---------- #
-    def start_timer(self):
-        self.time_left = 15
-        self.update_timer()
+            q = self.questions[self.current_q_index]
+            self.question_label.config(text=q["question"])
 
-    def update_timer(self):
-        self.timer_label.config(text=f"⏳ Time Left: {self.time_left}s")
-        if self.time_left > 0:
-            self.time_left -= 1
-            self.timer_id = self.root.after(1000, self.update_timer)
+            options = q["options"][:]
+            if self.config.get("shuffle_options", True):
+                random.shuffle(options)
+
+            for i, option in enumerate(options):
+                self.option_buttons[i].config(text=option, state="normal")
+
         else:
-            messagebox.showinfo("Time's Up!", "You ran out of time!")
-            self.current_q += 1
-            self.show_question()
+            self.end_game()
 
-    # ---------- Check Answer ---------- #
-    def check_answer(self, chosen):
+    def check_answer(self, idx):
+        q = self.questions[self.current_q_index]
+        if self.option_buttons[idx].cget("text") == q["answer"]:
+            self.score += 1
+            self.sound_manager.play("Assets/correct.mp3")
+        else:
+            self.sound_manager.play("Assets/wrong.mp3")
+
+        for btn in self.option_buttons:
+            btn.config(state="disabled")
+
         if self.timer_id:
             self.root.after_cancel(self.timer_id)
 
-        correct = self.quiz[self.current_q]["answer"]
-        if chosen == correct:
-            self.score += 1
-
-        self.current_q += 1
+    def next_question(self):
+        self.current_q_index += 1
         self.show_question()
 
-    # ---------- End Quiz ---------- #
-    def end_quiz(self):
-        global HIGHSCORES
-        HIGHSCORES.append({"name": self.player_name, "score": self.score, "difficulty": self.difficulty})
-        HIGHSCORES = sorted(HIGHSCORES, key=lambda x: x["score"], reverse=True)[:5]
+    def update_timer(self):
+        self.timer_label.config(text=f"Time left: {self.timer}s")
+        if self.timer > 0:
+            self.timer -= 1
+            self.timer_id = self.root.after(1000, self.update_timer)
+        else:
+            self.next_question()
 
-        with open(HIGHSCORES_FILE, "w") as f:
-            json.dump(HIGHSCORES, f, indent=2)
-
+    def end_game(self):
         for widget in self.root.winfo_children():
             widget.destroy()
 
-        widgets.styled_label(self.root, f"🎉 Well done {self.player_name}!", styles.FONT_TITLE).pack(pady=20)
-        widgets.styled_label(self.root, f"Your Final Score: {self.score}", styles.FONT_SUBTITLE).pack(pady=10)
+        title_label(self.root, f"Game Over! Your Score: {self.score}/{len(self.questions)}", self.theme).pack(pady=20)
 
-        widgets.styled_label(self.root, "🏆 Leaderboard:", styles.FONT_TITLE).pack(pady=10)
-        for i, entry in enumerate(HIGHSCORES, start=1):
-            widgets.styled_label(self.root, f"{i}. {entry['name']} - {entry['score']} ({entry['difficulty']})", styles.FONT_SUBTITLE).pack()
+        highscores = load_highscores()
+        highscores.append({"score": self.score})
+        highscores = sorted(highscores, key=lambda x: x["score"], reverse=True)[:self.config.get("max_highscores", 10)]
+        save_highscores(highscores)
 
-        widgets.styled_button(self.root, "Play Again", self.build_start_screen, styles.SECONDARY_COLOR).pack(pady=15)
-        widgets.styled_button(self.root, "Exit", self.root.quit, styles.ERROR_COLOR).pack()
+        primary_button(self.root, "Show Highscores", self.theme, self.show_highscores).pack(pady=10)
+        primary_button(self.root, "Quit", self.theme, self.root.quit).pack(pady=10)
+
+    def show_highscores(self):
+        for widget in self.root.winfo_children():
+            widget.destroy()
+
+        title_label(self.root, "🏆 Highscores", self.theme).pack(pady=20)
+        highscores = load_highscores()
+        highscores = sorted(highscores, key=lambda x: x["score"], reverse=True)[:5]
+
+        for i, entry in enumerate(highscores, 1):
+            title_label(self.root, f"{i}. Score: {entry['score']}", self.theme).pack()
+
+        primary_button(self.root, "Back", self.theme, self.root.quit).pack(pady=20)
+
+def start_quiz():
+    root = tk.Tk()
+    app = QuizApp(root)
+    root.mainloop()

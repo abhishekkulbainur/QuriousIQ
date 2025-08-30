@@ -1,18 +1,37 @@
-{
-  "Science": {
-    "easy": [
-      {
-        "question": "What planet is known as the Red Planet?",
-        "options": ["A) Earth", "B) Mars", "C) Venus", "D) Jupiter"],
-        "answer": "B"
-      }
-    ],
-    "medium": [],
-    "hard": []
+[
+  {
+    "question": "What is the capital of France?",
+    "options": ["Berlin", "Madrid", "Paris", "Rome"],
+    "answer": "Paris",
+    "category": "Geography",
+    "difficulty": "easy"
   },
-  "Math": {
-    "easy": [],
-    "medium": [],
-    "hard": []
+  {
+    "question": "Who developed the theory of relativity?",
+    "options": ["Isaac Newton", "Albert Einstein", "Galileo Galilei", "Nikola Tesla"],
+    "answer": "Albert Einstein",
+    "category": "Science",
+    "difficulty": "medium"
+  },
+  {
+    "question": "What is the value of Pi up to two decimal places?",
+    "options": ["3.12", "3.14", "3.15", "3.16"],
+    "answer": "3.14",
+    "category": "Mathematics",
+    "difficulty": "easy"
+  },
+  {
+    "question": "In which year did World War II end?",
+    "options": ["1942", "1945", "1947", "1950"],
+    "answer": "1945",
+    "category": "History",
+    "difficulty": "hard"
+  },
+  {
+    "question": "Which programming language is known as the language of the web?",
+    "options": ["Python", "C++", "JavaScript", "Java"],
+    "answer": "JavaScript",
+    "category": "Technology",
+    "difficulty": "easy"
   }
-}
+]

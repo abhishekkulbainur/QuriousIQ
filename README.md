@@ -17,21 +17,5 @@ Installation:
 How to Run:
 Run the quiz with Python: `python main.py`
 
-Project Structure:
-QURIOUSIQ/
-│── main.py
-│── quiz.py
-│── Assets/
-│── data/
-│   ├── config.json
-│   ├── highscores.json
-│   └── questions.json
-│── UI/
-│   ├── sounds.py
-│   ├── styles.py
-│   ├── themes.py
-│   └── widgets.py
-│── README.md
-
 License:
 Open-source and free to use.
